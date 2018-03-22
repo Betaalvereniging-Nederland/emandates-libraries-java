@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<configuration>
+ <appSettings>
+    <add key="eMandates.Contract.Id" value="" />
+    <add key="eMandates.Contract.SubId" value="" />
+    <add key="eMandates.Merchant.ReturnUrl" value="" />
+    <add key="eMandates.KeyStore.Location" value="" />
+    <add key="eMandates.KeyStore.Password" value="" />
+    <add key="eMandates.SigningCertificate.Alias" value="" />
+    <add key="eMandates.SigningCertificate.Password" value="" />
+    <add key="eMandates.AcquirerCertificate.Alias" value="" />
+    <add key="eMandates.Acquirer.DirectoryRequestUrl" value="" />
+    <add key="eMandates.Acquirer.TransactionRequestUrl" value="" />
+    <add key="eMandates.Logs.Enabled" value="true" />
+    <add key="eMandates.ServiceLogs.Enabled" value="true" />
+    <add key="eMandates.ServiceLogs.Location" value="D:\ApplicationData\eMandates.Merchant.Website\ServiceLogs" />
+    <add key="eMandates.ServiceLogs.Pattern" value="%Y-%M-%D\%h%m%s.%f-%a.xml" />
+  </appSettings>
+</configuration>
