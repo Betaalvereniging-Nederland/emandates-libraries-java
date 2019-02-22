@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <configuration>
  <appSettings>
-    <add key="eMandates.Merchant.Id" value="" />
-    <add key="eMandates.Merchant.SubId" value="" />
+    <add key="eMandates.Contract.Id" value="" />
+    <add key="eMandates.Contract.SubId" value="" />
     <add key="eMandates.Merchant.ReturnUrl" value="" />
     <add key="eMandates.KeyStore.Location" value="" />
     <add key="eMandates.KeyStore.Password" value="" />
