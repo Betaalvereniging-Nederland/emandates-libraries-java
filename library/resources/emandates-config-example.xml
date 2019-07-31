@@ -9,6 +9,7 @@
     <add key="eMandates.SigningCertificate.Alias" value="" />
     <add key="eMandates.SigningCertificate.Password" value="" />
     <add key="eMandates.AcquirerCertificate.Alias" value="" />
+    <add key="eMandates.AcquirerAlternateCertificate.Alias" value="" />
     <add key="eMandates.Acquirer.DirectoryRequestUrl" value="" />
     <add key="eMandates.Acquirer.TransactionRequestUrl" value="" />
     <add key="eMandates.Logs.Enabled" value="true" />
