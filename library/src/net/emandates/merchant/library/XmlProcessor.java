@@ -78,11 +78,11 @@ class XmlProcessor {
         logger.Log(config, "adding signature...");
         KeyStore ks = KeyStore.getInstance(KeyStore.getDefaultType());
         InputStream is = config.getKeyStore();
-        is.reset();
         if(is == null){
             logger.Log(config, "key store can not be found/loaded");
             throw new CommunicatorException("KeyStore was not found/loaded");
         }
+        is.reset();
         ks.load(is, config.getKeyStorePassword().toCharArray());
         logger.Log(config, "loaded key store");
         KeyStore.PrivateKeyEntry keyEntry = (KeyStore.PrivateKeyEntry) ks.getEntry(config.getSigningCertificateAlias(),
@@ -271,13 +271,36 @@ class XmlProcessor {
 
     private boolean CheckIdxSignature(Configuration config, Document doc, Element signature) throws MarshalException, XMLSignatureException, IOException {
         XMLSignatureFactory fac = XMLSignatureFactory.getInstance("DOM");
-        DOMValidateContext valContext = new DOMValidateContext(new idxKeySelector(config), doc);
+        try
+        {
+            if(CheckIdxSignature(config, config.getAcquirerCertificateAlias(), doc, signature, fac))
+            {
+            	logger.Log(config, "Using acquirer certificate alias");
+                return true;
+            }
+            logger.Log(config, "Using acquirer alternate certificate alias");
+            return CheckIdxSignature(config, config.getAcquirerAlternateCertificateAlias(), doc, signature, fac);
+        }
+        catch(NullPointerException npe)
+        {
+            logger.Log(config,"Failed to use acquirer cetificate. Trying to use acquirer alternate certificate", npe);
+            return CheckIdxSignature(config, config.getAcquirerAlternateCertificateAlias(), doc, signature, fac);
+        }
+    }
+    
+    private boolean CheckIdxSignature(Configuration config, String acquirerCertificateAlias, Document doc, Element signature, XMLSignatureFactory fac) throws MarshalException, XMLSignatureException, IOException 
+    {
+        if(acquirerCertificateAlias == null || acquirerCertificateAlias.isEmpty())
+        {
+            logger.Log(config,"When checking idx signature, acquirer certificate was null or empty!");
+            return false;
+        }
+        DOMValidateContext valContext = new DOMValidateContext(new idxKeySelector(config, acquirerCertificateAlias), doc);
         XMLSignature sig = fac.unmarshalXMLSignature(new DOMStructure(signature));
 
         valContext.setProperty("javax.xml.crypto.dsig.cacheReference", Boolean.TRUE);
 
-        boolean b = sig.validate(valContext);
-        return b;
+        return sig.validate(valContext);
     }
 
     private class eMandateKeySelector extends KeySelector {
@@ -319,9 +342,11 @@ class XmlProcessor {
     private class idxKeySelector extends KeySelector {
 
         private Configuration config;
+        private String acquirerCertificateAlias;
 
-        public idxKeySelector(Configuration config) {
+        public idxKeySelector(Configuration config, String acquirerCertificateAlias) {
             this.config = config;
+            this.acquirerCertificateAlias = acquirerCertificateAlias;
         }
 
         @Override
@@ -338,7 +363,7 @@ class XmlProcessor {
                 InputStream is = config.getKeyStore();
                 is.reset();
                 ks.load(is, config.getKeyStorePassword().toCharArray());
-                X509Certificate cert = (X509Certificate) ks.getCertificate(config.getAcquirerCertificateAlias());
+                X509Certificate cert = (X509Certificate) ks.getCertificate(acquirerCertificateAlias);
                 final PublicKey pk = cert.getPublicKey();
 
                 logger.Log(config, "checking iDx signature with certificate:");
