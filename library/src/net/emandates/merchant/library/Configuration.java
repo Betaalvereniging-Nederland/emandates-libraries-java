@@ -33,6 +33,7 @@ public class Configuration {
     private String serviceLogsLocation;
     private String serviceLogsPattern;
     private ILoggerFactory loggerFactory;
+    private ISigningKeyProvider keyAccessor;
     private boolean tls12Enabled;
 
     private static Configuration instance;
@@ -144,6 +145,7 @@ public class Configuration {
         this.loggerFactory = loggerFactory != null ? loggerFactory : new LoggerFactory();
 
         setKeyStoreAndPass(keyStore, keyStorePassword);
+        this.keyAccessor = new KeystoreSigningKeyProvider(this, this.loggerFactory.Create());
     }
     
 
@@ -756,5 +758,13 @@ public class Configuration {
             }
         }
         return null;
+    }
+
+    public ISigningKeyProvider getKeyAccessor() {
+        return keyAccessor;
+    }
+
+    public void setKeyAccessor(ISigningKeyProvider keyAccessor) {
+        this.keyAccessor = keyAccessor;
     }
 }

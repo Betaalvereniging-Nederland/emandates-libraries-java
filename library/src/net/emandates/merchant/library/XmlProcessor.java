@@ -76,23 +76,8 @@ class XmlProcessor {
             UnrecoverableEntryException, InvalidAlgorithmParameterException, ParserConfigurationException, MarshalException,
             SAXException, XMLSignatureException, TransformerException {
         logger.Log(config, "adding signature...");
-        KeyStore ks = KeyStore.getInstance(KeyStore.getDefaultType());
-        InputStream is = config.getKeyStore();
-        if(is == null){
-            logger.Log(config, "key store can not be found/loaded");
-            throw new CommunicatorException("KeyStore was not found/loaded");
-        }
-        is.reset();
-        ks.load(is, config.getKeyStorePassword().toCharArray());
-        logger.Log(config, "loaded key store");
-        KeyStore.PrivateKeyEntry keyEntry = (KeyStore.PrivateKeyEntry) ks.getEntry(config.getSigningCertificateAlias(),
-                new KeyStore.PasswordProtection(config.getSigningCertificatePassword().toCharArray()));
-        if(keyEntry == null){
-            logger.Log(config, "key entry '" + config.getSigningCertificateAlias() + "' can not be found");
-            throw new CommunicatorException("KeyEntry '" + config.getSigningCertificateAlias() + "' was not found in the KeyStore");
-        }
-        logger.Log(config, "found key entry");
-        X509Certificate cert = (X509Certificate) keyEntry.getCertificate();
+        SigningKeyPair keyEntry = config.getKeyAccessor().getSigningKeyPair();
+        X509Certificate cert = keyEntry.getCertificate();
 
         XMLSignatureFactory fac = XMLSignatureFactory.getInstance("DOM");
 
