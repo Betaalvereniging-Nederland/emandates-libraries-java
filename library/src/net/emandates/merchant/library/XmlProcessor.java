@@ -258,113 +258,31 @@ class XmlProcessor {
         XMLSignatureFactory fac = XMLSignatureFactory.getInstance("DOM");
         try
         {
-            if(CheckIdxSignature(config, config.getAcquirerCertificateAlias(), doc, signature, fac))
+            if(CheckIdxSignature(doc, signature, fac, config.getKeyAccessor().getAcquirerKeySelector()))
             {
             	logger.Log(config, "Using acquirer certificate alias");
                 return true;
             }
             logger.Log(config, "Using acquirer alternate certificate alias");
-            return CheckIdxSignature(config, config.getAcquirerAlternateCertificateAlias(), doc, signature, fac);
+            return CheckIdxSignature(doc, signature, fac, config.getKeyAccessor().getAlternativeAcquirerKeySelector());
         }
-        catch(NullPointerException npe)
+        catch(IllegalArgumentException | NullPointerException npe)
         {
-            logger.Log(config,"Failed to use acquirer cetificate. Trying to use acquirer alternate certificate", npe);
-            return CheckIdxSignature(config, config.getAcquirerAlternateCertificateAlias(), doc, signature, fac);
+            logger.Log(config,"Failed to use acquirer certificate. Trying to use acquirer alternate certificate", npe);
+            return CheckIdxSignature(doc, signature, fac, config.getKeyAccessor().getAlternativeAcquirerKeySelector());
         }
     }
     
-    private boolean CheckIdxSignature(Configuration config, String acquirerCertificateAlias, Document doc, Element signature, XMLSignatureFactory fac) throws MarshalException, XMLSignatureException, IOException 
+    private boolean CheckIdxSignature(Document doc, Element signature, XMLSignatureFactory fac, KeySelector keySelector) throws MarshalException, XMLSignatureException, IOException
     {
-        if(acquirerCertificateAlias == null || acquirerCertificateAlias.isEmpty())
-        {
-            logger.Log(config,"When checking idx signature, acquirer certificate was null or empty!");
+        if (keySelector == null) {
             return false;
         }
-        DOMValidateContext valContext = new DOMValidateContext(new idxKeySelector(config, acquirerCertificateAlias), doc);
+        DOMValidateContext valContext = new DOMValidateContext(keySelector, doc);
         XMLSignature sig = fac.unmarshalXMLSignature(new DOMStructure(signature));
 
         valContext.setProperty("javax.xml.crypto.dsig.cacheReference", Boolean.TRUE);
 
         return sig.validate(valContext);
-    }
-
-    private class eMandateKeySelector extends KeySelector {
-
-        private Configuration config;
-
-        public eMandateKeySelector(Configuration config) {
-            this.config = config;
-        }
-
-        @Override
-        public KeySelectorResult select(KeyInfo keyInfo, Purpose purpose, AlgorithmMethod method, XMLCryptoContext context) throws KeySelectorException {
-            XMLStructure ki = (XMLStructure) keyInfo.getContent().iterator().next();
-            if (!(ki instanceof X509Data)) {
-                throw new KeySelectorException("KeyName not found!");
-            }
-            X509Data data = (X509Data) ki;
-            final X509Certificate cert = (X509Certificate) data.getContent().get(0);
-            final PublicKey pk = cert.getPublicKey();
-
-            logger.Log(config, "checking eMandate signature with certificate:");
-            try {
-                logger.Log(config, "  fingerprint: " + Utils.sha1Hex(cert.getEncoded()));
-            } catch (CertificateEncodingException | NoSuchAlgorithmException ex) {
-                logger.Log(config, "  (cannot get fingerprint): " + ex.getMessage());
-            }
-            logger.Log(config, "  subject    : " + cert.getSubjectDN().getName());
-            logger.Log(config, "  issuer     : " + cert.getIssuerDN().getName());
-
-            return new KeySelectorResult() {
-                @Override
-                public Key getKey() {
-                    return pk;
-                }
-            };
-        }
-    }
-
-    private class idxKeySelector extends KeySelector {
-
-        private Configuration config;
-        private String acquirerCertificateAlias;
-
-        public idxKeySelector(Configuration config, String acquirerCertificateAlias) {
-            this.config = config;
-            this.acquirerCertificateAlias = acquirerCertificateAlias;
-        }
-
-        @Override
-        public KeySelectorResult select(KeyInfo keyInfo, Purpose purpose, AlgorithmMethod method, XMLCryptoContext context) throws KeySelectorException {
-            try {
-                XMLStructure ki = (XMLStructure) keyInfo.getContent().iterator().next();
-                if (!(ki instanceof KeyName)) {
-                    throw new KeySelectorException("KeyName not found!");
-                }
-                KeyName kn = (KeyName) ki;
-                String thumbprint = kn.getName();
-
-                KeyStore ks = KeyStore.getInstance(KeyStore.getDefaultType());
-                InputStream is = config.getKeyStore();
-                is.reset();
-                ks.load(is, config.getKeyStorePassword().toCharArray());
-                X509Certificate cert = (X509Certificate) ks.getCertificate(acquirerCertificateAlias);
-                final PublicKey pk = cert.getPublicKey();
-
-                logger.Log(config, "checking iDx signature with certificate:");
-                logger.Log(config, "  fingerprint: " + thumbprint);
-                logger.Log(config, "  subject    : " + cert.getSubjectDN().getName());
-                logger.Log(config, "  issuer     : " + cert.getIssuerDN().getName());
-
-                return new KeySelectorResult() {
-                    @Override
-                    public Key getKey() {
-                        return pk;
-                    }
-                };
-            } catch (IOException | NoSuchAlgorithmException | CertificateException | KeyStoreException ex) {
-                throw new KeySelectorException(ex);
-            }
-        }
     }
 }
