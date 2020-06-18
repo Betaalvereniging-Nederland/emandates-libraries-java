@@ -11,4 +11,5 @@ public interface ISigningKeyProvider {
     public SigningKeyPair getSigningKeyPair() throws CertificateException, NoSuchAlgorithmException, KeyStoreException, UnrecoverableEntryException, CommunicatorException, IOException;
     public KeySelector getAcquirerKeySelector();
     public KeySelector getAlternativeAcquirerKeySelector();
+    public ISigningKeyProvider Clone() throws CloneNotSupportedException;
 }

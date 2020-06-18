@@ -4,38 +4,97 @@ import javax.xml.crypto.*;
 import javax.xml.crypto.dsig.keyinfo.KeyInfo;
 import javax.xml.crypto.dsig.keyinfo.KeyName;
 import javax.xml.crypto.dsig.keyinfo.X509Data;
+import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URL;
 import java.security.*;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 
 public class KeystoreSigningKeyProvider implements ISigningKeyProvider {
-    private final Configuration configuration;
-    private final ILogger logger;
 
-    public KeystoreSigningKeyProvider(Configuration configuration, ILogger logger) {
-        this.configuration = configuration;
-        this.logger = logger;
+    private String keyStoreLocation;
+    private InputStream keyStore;
+    private String keyStorePassword;
+    private String signingCertificateAlias;
+    private String signingCertificatePassword;
+    private String acquirerCertificateAlias;
+    private String acquirerAlternateCertificateAlias;
+
+    private Configuration configuration;
+    private ILogger logger;
+
+    public KeystoreSigningKeyProvider(
+            String keyStoreLocation,
+            InputStream keyStore,
+            String keyStorePassword,
+            String signingCertificateAlias,
+            String signingCertificatePassword,
+            String acquirerCertificateAlias,
+            String acquirerAlternateCertificateAlias
+    ) throws IOException {
+        this.keyStoreLocation = keyStoreLocation;
+        setKeyStoreAndPass(keyStore, keyStorePassword);
+        this.signingCertificateAlias = signingCertificateAlias;
+        this.signingCertificatePassword = signingCertificatePassword;
+        this.acquirerCertificateAlias = acquirerCertificateAlias;
+        this.acquirerAlternateCertificateAlias = acquirerAlternateCertificateAlias;
+    }
+
+    public KeystoreSigningKeyProvider(
+            String keyStoreLocation,
+            String keyStorePassword,
+            String signingCertificateAlias,
+            String signingCertificatePassword,
+            String acquirerCertificateAlias,
+            String acquirerAlternateCertificateAlias
+    ) throws IOException {
+        this(
+                keyStoreLocation,
+                loadKeyStore(keyStoreLocation),
+                keyStorePassword,
+                signingCertificateAlias,
+                signingCertificatePassword,
+                acquirerCertificateAlias,
+                acquirerAlternateCertificateAlias
+        );
+    }
+
+    private static InputStream loadKeyStore(String storeLocation) throws IOException {
+        URL url = ClassLoader.getSystemClassLoader().getResource(storeLocation);
+        if (url == null) {
+            url = Configuration.class.getClassLoader().getResource(storeLocation);
+        }
+        InputStream keyStore = markSupported(url.openStream());
+        keyStore.mark(Integer.MAX_VALUE);
+        return keyStore;
+    }
+
+    private static InputStream markSupported(InputStream in) {
+        if (in.markSupported()) {
+            return in;
+        }
+        return new BufferedInputStream(in);
     }
 
     @Override
     public SigningKeyPair getSigningKeyPair() throws CertificateException, NoSuchAlgorithmException, KeyStoreException, UnrecoverableEntryException, CommunicatorException, IOException {
         KeyStore ks = KeyStore.getInstance(KeyStore.getDefaultType());
-        InputStream is = configuration.getKeyStore();
+        InputStream is = getKeyStore();
         if (is == null) {
             logger.Log(configuration, "key store can not be found/loaded");
             throw new CommunicatorException("KeyStore was not found/loaded");
         }
         is.reset();
-        ks.load(is, configuration.getKeyStorePassword().toCharArray());
+        ks.load(is, getKeyStorePassword().toCharArray());
         logger.Log(configuration, "loaded key store");
-        KeyStore.PrivateKeyEntry keyEntry = (KeyStore.PrivateKeyEntry) ks.getEntry(configuration.getSigningCertificateAlias(),
-                new KeyStore.PasswordProtection(configuration.getSigningCertificatePassword().toCharArray()));
+        KeyStore.PrivateKeyEntry keyEntry = (KeyStore.PrivateKeyEntry) ks.getEntry(getSigningCertificateAlias(),
+                new KeyStore.PasswordProtection(getSigningCertificatePassword().toCharArray()));
         if (keyEntry == null) {
-            logger.Log(configuration, "key entry '" + configuration.getSigningCertificateAlias() + "' can not be found");
-            throw new CommunicatorException("KeyEntry '" + configuration.getSigningCertificateAlias() + "' was not found in the KeyStore");
+            logger.Log(configuration, "key entry '" + getSigningCertificateAlias() + "' can not be found");
+            throw new CommunicatorException("KeyEntry '" + getSigningCertificateAlias() + "' was not found in the KeyStore");
         }
         logger.Log(configuration, "found key entry");
         KeyStore.PrivateKeyEntry privateKeyEntry = keyEntry;
@@ -45,7 +104,7 @@ public class KeystoreSigningKeyProvider implements ISigningKeyProvider {
     @Override
     public KeySelector getAcquirerKeySelector() {
         try {
-            return new idxKeySelector(configuration, configuration.getAcquirerCertificateAlias());
+            return new idxKeySelector(configuration, getAcquirerCertificateAlias());
         } catch (IllegalArgumentException e) {
             return null;
         }
@@ -54,10 +113,125 @@ public class KeystoreSigningKeyProvider implements ISigningKeyProvider {
     @Override
     public KeySelector getAlternativeAcquirerKeySelector() {
         try {
-            return new idxKeySelector(configuration, configuration.getAcquirerAlternateCertificateAlias());
+            return new idxKeySelector(configuration, getAcquirerAlternateCertificateAlias());
         } catch (IllegalArgumentException e) {
             return null;
         }
+    }
+
+    @Override
+    public ISigningKeyProvider Clone() throws CloneNotSupportedException {
+        try {
+            return new KeystoreSigningKeyProvider(
+                    this.keyStoreLocation,
+                    this.keyStorePassword,
+                    this.signingCertificateAlias,
+                    this.signingCertificatePassword,
+                    this.acquirerCertificateAlias,
+                    this.acquirerAlternateCertificateAlias
+            );
+        } catch (IOException e) {
+            throw new CloneNotSupportedException(e.getMessage());
+        }
+    }
+
+    /**
+     * @return The password of the private key of the signing certificate
+     */
+    public String getSigningCertificatePassword() {
+        return signingCertificatePassword;
+    }
+
+    /**
+     * @param signingCertificatePassword The password of the private key of the signing certificate
+     */
+    public void setSigningCertificatePassword(String signingCertificatePassword) {
+        this.signingCertificatePassword = signingCertificatePassword;
+    }
+
+    /**
+     * @return The password used to access the keystore
+     */
+    public String getKeyStorePassword() {
+        return keyStorePassword;
+    }
+
+    /**
+     * @return A Java keystore (file on the disk) that stores the certificates
+     */
+    public String getKeyStoreLocation() {
+        return keyStoreLocation;
+    }
+
+    /**
+     * @param keyStoreLocation A Java keystore (file on the disk) that stores the certificates
+     * @param keyStorePassword The password used to access the keystore
+     */
+    public void setKeyStoreLocationAndPass(String keyStoreLocation, String keyStorePassword) throws IOException {
+        this.keyStoreLocation = keyStoreLocation;
+        this.keyStorePassword = keyStorePassword;
+
+        this.keyStore = loadKeyStore(getKeyStoreLocation());
+    }
+
+    /**
+     * @param keyStore A Java InputStream keystore that stores the certificates
+     * @param keyStorePassword The password used to access the keystore
+     */
+    public void setKeyStoreAndPass(InputStream keyStore, String keyStorePassword) throws IOException {
+        this.keyStorePassword = keyStorePassword;
+
+        this.keyStore = markSupported(keyStore);
+        this.keyStore.mark(Integer.MAX_VALUE);
+    }
+
+    /**
+     * @return the keyStore
+     */
+    InputStream getKeyStore() {
+        return keyStore;
+    }
+
+    /**
+     * @return A string which specifies the alias of the certificate to use to sign messages to the creditor bank.
+     */
+    public String getSigningCertificateAlias() {
+        return signingCertificateAlias;
+    }
+
+    /**
+     * @param signingCertificateAlias A string which specifies the alias of the certificate to use to sign messages to the creditor bank.
+     */
+    public void setSigningCertificateAlias(String signingCertificateAlias) {
+        this.signingCertificateAlias = signingCertificateAlias;
+    }
+
+    /**
+     * @return A string which specifies the alias of the certificate to use to validate messages from the creditor bank
+     */
+    public String getAcquirerCertificateAlias() {
+        return acquirerCertificateAlias;
+    }
+
+    /**
+     * @param acquirerCertificateAlias A string which specifies the alias of the certificate to use to validate messages from the creditor bank
+     */
+    public void setAcquirerCertificateAlias(String acquirerCertificateAlias) {
+        this.acquirerCertificateAlias = acquirerCertificateAlias;
+    }
+
+    /**
+     * @return A string which specifies the alias of the alternate certificate to validate  received messages from the creditor bank
+     */
+    public String getAcquirerAlternateCertificateAlias() {
+        return acquirerAlternateCertificateAlias;
+    }
+
+    /**
+     * @param acquirerAlternateCertificateAlias A string which specifies the alias of the alternate certificate to validate received messages from the creditor bank
+     */
+    public void setAcquirerAlternateCertificateAlias(String acquirerAlternateCertificateAlias) {
+        this.acquirerAlternateCertificateAlias = acquirerAlternateCertificateAlias;
     }
 
     private class eMandateKeySelector extends KeySelector {
@@ -120,9 +294,9 @@ public class KeystoreSigningKeyProvider implements ISigningKeyProvider {
                 String thumbprint = kn.getName();
 
                 KeyStore ks = KeyStore.getInstance(KeyStore.getDefaultType());
-                InputStream is = configuration.getKeyStore();
+                InputStream is = getKeyStore();
                 is.reset();
-                ks.load(is, configuration.getKeyStorePassword().toCharArray());
+                ks.load(is, getKeyStorePassword().toCharArray());
                 X509Certificate cert = (X509Certificate) ks.getCertificate(acquirerCertificateAlias);
                 final PublicKey pk = cert.getPublicKey();
 

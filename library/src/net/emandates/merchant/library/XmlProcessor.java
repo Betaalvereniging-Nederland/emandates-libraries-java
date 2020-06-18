@@ -2,18 +2,13 @@ package net.emandates.merchant.library;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
 import java.security.InvalidAlgorithmParameterException;
-import java.security.Key;
-import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.Provider;
-import java.security.PublicKey;
 import java.security.UnrecoverableEntryException;
-import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
@@ -21,13 +16,8 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import javax.xml.XMLConstants;
-import javax.xml.crypto.AlgorithmMethod;
 import javax.xml.crypto.KeySelector;
-import javax.xml.crypto.KeySelectorException;
-import javax.xml.crypto.KeySelectorResult;
 import javax.xml.crypto.MarshalException;
-import javax.xml.crypto.XMLCryptoContext;
-import javax.xml.crypto.XMLStructure;
 import javax.xml.crypto.dom.DOMStructure;
 import javax.xml.crypto.dsig.CanonicalizationMethod;
 import javax.xml.crypto.dsig.DigestMethod;
@@ -76,7 +66,7 @@ class XmlProcessor {
             UnrecoverableEntryException, InvalidAlgorithmParameterException, ParserConfigurationException, MarshalException,
             SAXException, XMLSignatureException, TransformerException {
         logger.Log(config, "adding signature...");
-        SigningKeyPair keyEntry = config.getKeyAccessor().getSigningKeyPair();
+        SigningKeyPair keyEntry = config.getSigningKeyProvider().getSigningKeyPair();
         X509Certificate cert = keyEntry.getCertificate();
 
         XMLSignatureFactory fac = XMLSignatureFactory.getInstance("DOM");
@@ -258,18 +248,18 @@ class XmlProcessor {
         XMLSignatureFactory fac = XMLSignatureFactory.getInstance("DOM");
         try
         {
-            if(CheckIdxSignature(doc, signature, fac, config.getKeyAccessor().getAcquirerKeySelector()))
+            if(CheckIdxSignature(doc, signature, fac, config.getSigningKeyProvider().getAcquirerKeySelector()))
             {
             	logger.Log(config, "Using acquirer certificate alias");
                 return true;
             }
             logger.Log(config, "Using acquirer alternate certificate alias");
-            return CheckIdxSignature(doc, signature, fac, config.getKeyAccessor().getAlternativeAcquirerKeySelector());
+            return CheckIdxSignature(doc, signature, fac, config.getSigningKeyProvider().getAlternativeAcquirerKeySelector());
         }
         catch(IllegalArgumentException | NullPointerException npe)
         {
             logger.Log(config,"Failed to use acquirer certificate. Trying to use acquirer alternate certificate", npe);
-            return CheckIdxSignature(doc, signature, fac, config.getKeyAccessor().getAlternativeAcquirerKeySelector());
+            return CheckIdxSignature(doc, signature, fac, config.getSigningKeyProvider().getAlternativeAcquirerKeySelector());
         }
     }
     
