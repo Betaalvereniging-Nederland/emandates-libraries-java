@@ -23,8 +23,8 @@ public class KeystoreSigningKeyProvider implements ISigningKeyProvider {
     private String acquirerCertificateAlias;
     private String acquirerAlternateCertificateAlias;
 
-    private Configuration configuration;
-    private ILogger logger;
+    private final Configuration configuration;
+    private final ILogger logger;
 
     public KeystoreSigningKeyProvider(
             String keyStoreLocation,
@@ -33,14 +33,16 @@ public class KeystoreSigningKeyProvider implements ISigningKeyProvider {
             String signingCertificateAlias,
             String signingCertificatePassword,
             String acquirerCertificateAlias,
-            String acquirerAlternateCertificateAlias
-    ) throws IOException {
+            String acquirerAlternateCertificateAlias,
+            Configuration configuration) throws IOException {
         this.keyStoreLocation = keyStoreLocation;
         setKeyStoreAndPass(keyStore, keyStorePassword);
         this.signingCertificateAlias = signingCertificateAlias;
         this.signingCertificatePassword = signingCertificatePassword;
         this.acquirerCertificateAlias = acquirerCertificateAlias;
         this.acquirerAlternateCertificateAlias = acquirerAlternateCertificateAlias;
+        this.configuration = configuration;
+        this.logger = configuration.getLoggerFactory().Create();
     }
 
     public KeystoreSigningKeyProvider(
@@ -49,8 +51,8 @@ public class KeystoreSigningKeyProvider implements ISigningKeyProvider {
             String signingCertificateAlias,
             String signingCertificatePassword,
             String acquirerCertificateAlias,
-            String acquirerAlternateCertificateAlias
-    ) throws IOException {
+            String acquirerAlternateCertificateAlias,
+            Configuration configuration) throws IOException {
         this(
                 keyStoreLocation,
                 loadKeyStore(keyStoreLocation),
@@ -58,8 +60,8 @@ public class KeystoreSigningKeyProvider implements ISigningKeyProvider {
                 signingCertificateAlias,
                 signingCertificatePassword,
                 acquirerCertificateAlias,
-                acquirerAlternateCertificateAlias
-        );
+                acquirerAlternateCertificateAlias,
+                configuration);
     }
 
     private static InputStream loadKeyStore(String storeLocation) throws IOException {
@@ -128,8 +130,8 @@ public class KeystoreSigningKeyProvider implements ISigningKeyProvider {
                     this.signingCertificateAlias,
                     this.signingCertificatePassword,
                     this.acquirerCertificateAlias,
-                    this.acquirerAlternateCertificateAlias
-            );
+                    this.acquirerAlternateCertificateAlias,
+                    configuration);
         } catch (IOException e) {
             throw new CloneNotSupportedException(e.getMessage());
         }

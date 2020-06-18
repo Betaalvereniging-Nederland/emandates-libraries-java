@@ -84,14 +84,16 @@ public class Configuration {
             serviceLogsPattern,
             false,
             loggerFactory,
-                new KeystoreSigningKeyProvider(
-                        keyStoreLocation,
-                        keyStorePassword,
-                        signingCertificateAlias,
-                        signingCertificatePassword,
-                        acquirerCertificateAlias,
-                        acquirerAlternateCertificateAlias
-                ));
+                null
+        );
+        this.setSigningKeyProvider(new KeystoreSigningKeyProvider(
+                keyStoreLocation,
+                keyStorePassword,
+                signingCertificateAlias,
+                signingCertificatePassword,
+                acquirerCertificateAlias,
+                acquirerAlternateCertificateAlias,
+                this));
     }
     
     /**
@@ -141,8 +143,8 @@ public class Configuration {
                 signingCertificateAlias,
                 signingCertificatePassword,
                 acquirerCertificateAlias,
-                acquirerAlternateCertificateAlias
-        );
+                acquirerAlternateCertificateAlias,
+                this);
     }
 
     /**
@@ -183,14 +185,15 @@ public class Configuration {
             serviceLogsPattern,
             false,
             loggerFactory,
-                new KeystoreSigningKeyProvider(
-                        keyStoreLocation,
-                        keyStorePassword,
-                        signingCertificateAlias,
-                        signingCertificatePassword,
-                        acquirerCertificateAlias,
-                        null
-                ));
+                null);
+        this.setSigningKeyProvider(new KeystoreSigningKeyProvider(
+                keyStoreLocation,
+                keyStorePassword,
+                signingCertificateAlias,
+                signingCertificatePassword,
+                acquirerCertificateAlias,
+                null,
+                this));
     }
     
     /**
@@ -238,8 +241,8 @@ public class Configuration {
                 signingCertificateAlias,
                 signingCertificatePassword,
                 acquirerCertificateAlias,
-                null
-        );
+                null,
+                this);
     }
     
     /**
@@ -287,8 +290,8 @@ public class Configuration {
                 signingCertificateAlias,
                 signingCertificatePassword,
                 acquirerCertificateAlias,
-                null
-        );
+                null,
+                this);
     }
     
     /**
@@ -330,14 +333,15 @@ public class Configuration {
             serviceLogsPattern,
             tls12Enabled,
             loggerFactory,
-                new KeystoreSigningKeyProvider(
-                        keyStoreLocation,
-                        keyStorePassword,
-                        signingCertificateAlias,
-                        signingCertificatePassword,
-                        acquirerCertificateAlias,
-                        null
-                ));
+                null);
+        this.setSigningKeyProvider(new KeystoreSigningKeyProvider(
+                keyStoreLocation,
+                keyStorePassword,
+                signingCertificateAlias,
+                signingCertificatePassword,
+                acquirerCertificateAlias,
+                null,
+                this));
     }
 
     /**
@@ -436,8 +440,8 @@ public class Configuration {
                 getConfigValue(doc, "eMandates.SigningCertificate.Alias"),
                 getConfigValue(doc, "eMandates.SigningCertificate.Password"),
                 getConfigValue(doc, "eMandates.AcquirerCertificate.Alias"),
-                getConfigValue(doc, "eMandates.AcquirerAlternateCertificate.Alias")
-        ));
+                getConfigValue(doc, "eMandates.AcquirerAlternateCertificate.Alias"),
+                this));
     }
 
     /**
