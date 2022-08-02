@@ -238,10 +238,7 @@ class XmlProcessor {
         Document eMandate = dbf.newDocumentBuilder().parse(new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8)));
         Element signature = (Element) eMandate.getElementsByTagNameNS("*", "Signature").item(0);
 
-        String providerName = System.getProperty(
-                "jsr105Provider",
-                "org.jcp.xml.dsig.internal.dom.XMLDSigRI");
-        XMLSignatureFactory fac = XMLSignatureFactory.getInstance("DOM", (Provider) Class.forName(providerName).newInstance());
+        XMLSignatureFactory fac = CreateXMLSignatureFactory();
         XMLSignature sig = fac.unmarshalXMLSignature(new DOMStructure(signature));
 
         X509Data struct = (X509Data) sig.getKeyInfo().getContent().iterator().next();
@@ -269,6 +266,21 @@ class XmlProcessor {
         return b;
     }
 
+    private XMLSignatureFactory CreateXMLSignatureFactory() throws ClassNotFoundException, InstantiationException, IllegalAccessException {
+        String versionParameter = System.getProperty("java.version");
+        assert versionParameter != null;
+
+        int version = Integer.parseInt(versionParameter.split("\\.")[0]);
+        if (version < 9) {
+            String providerName = System.getProperty(
+                    "jsr105Provider",
+                    "org.jcp.xml.dsig.internal.dom.XMLDSigRI");
+            return XMLSignatureFactory.getInstance("DOM", (Provider) Class.forName(providerName).newInstance());
+        } else {
+            return XMLSignatureFactory.getInstance("DOM");
+        }
+    }
+
     private boolean CheckIdxSignature(Configuration config, Document doc, Element signature) throws MarshalException, XMLSignatureException, IOException {
         XMLSignatureFactory fac = XMLSignatureFactory.getInstance("DOM");
         try
@@ -287,8 +299,8 @@ class XmlProcessor {
             return CheckIdxSignature(config, config.getAcquirerAlternateCertificateAlias(), doc, signature, fac);
         }
     }
-    
-    private boolean CheckIdxSignature(Configuration config, String acquirerCertificateAlias, Document doc, Element signature, XMLSignatureFactory fac) throws MarshalException, XMLSignatureException, IOException 
+
+    private boolean CheckIdxSignature(Configuration config, String acquirerCertificateAlias, Document doc, Element signature, XMLSignatureFactory fac) throws MarshalException, XMLSignatureException, IOException
     {
         if(acquirerCertificateAlias == null || acquirerCertificateAlias.isEmpty())
         {
