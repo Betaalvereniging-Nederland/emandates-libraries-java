@@ -1,7 +1,7 @@
 package net.emandates.merchant.library;
 
 import java.util.Date;
-import javax.xml.bind.JAXBException;
+import jakarta.xml.bind.JAXBException;
 import javax.xml.datatype.XMLGregorianCalendar;
 import javax.xml.transform.TransformerException;
 import org.w3c.dom.Node;

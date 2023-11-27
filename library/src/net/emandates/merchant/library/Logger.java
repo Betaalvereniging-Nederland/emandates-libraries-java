@@ -16,16 +16,24 @@ import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
 class Logger implements ILogger {
+    private String version = "";
+
+    public Logger() {
+    }
+
+    public Logger(String packageVersion) {
+        version = packageVersion;
+    }
 
     private void Write(Configuration config, String content) {
         if (config.isLogsEnabled()) {
-            java.util.logging.Logger.getLogger(Logger.class.getName()).log(Level.INFO, content);
+            java.util.logging.Logger.getLogger(Logger.class.getName()).log(Level.INFO, versionedLog(content));
         }
     }
 
     private void Write(Configuration config, Throwable e) {
         if (config.isLogsEnabled()) {
-            java.util.logging.Logger.getLogger(Logger.class.getName()).log(Level.INFO, null, e);
+            java.util.logging.Logger.getLogger(Logger.class.getName()).log(Level.INFO, versionedLog(null), e);
         }
     }
 
@@ -73,5 +81,12 @@ class Logger implements ILogger {
     @Override
     public void LogXmlMessage(Configuration config, String content) {
         LogFile(config, content);
+    }
+
+    private String versionedLog(String message) {
+        if(message != null) {
+            return String.format("v[%s] %s", version, message);
+        }
+        return String.format("v[%s]", version);
     }
 }

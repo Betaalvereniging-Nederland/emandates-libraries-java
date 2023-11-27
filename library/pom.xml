@@ -1,6 +1,5 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <groupId>net.emandates</groupId>
     <artifactId>merchant.library</artifactId>
@@ -16,7 +15,7 @@
         <sonar.java.binaries>target</sonar.java.binaries>
         <sonar.java.libraries>target</sonar.java.libraries>
         <sonar.sourceEncoding>UTF-8</sonar.sourceEncoding>
-        <java.compile.version>1.7</java.compile.version>
+        <java.compile.version>17</java.compile.version>
     </properties>
 
     <build>
@@ -49,24 +48,31 @@
                             <goal>shade</goal>
                         </goals>
                         <configuration>
+                            <transformers>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                                    <manifestEntries>
+                                        <Implementation-Version>${project.version}</Implementation-Version>
+                                    </manifestEntries>
+                                </transformer>
+                            </transformers>
                             <filters>
                                 <filter>
-                                <artifact>javax.*:*</artifact>
-                                <excludes>
-                                    <exclude>META-INF/**</exclude>
-                                    <exclude>META-INF/services/**</exclude>
-                                    <exclude>META-INF/maven/**</exclude>
-                                    <exclude>META-INF/versions/9/**</exclude>
-                                </excludes>
+                                    <artifact>javax.*:*</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/**</exclude>
+                                        <exclude>META-INF/services/**</exclude>
+                                        <exclude>META-INF/maven/**</exclude>
+                                        <exclude>META-INF/versions/9/**</exclude>
+                                    </excludes>
                                 </filter>
                                 <filter>
-                                <artifact>com.sun.xml.bind:*</artifact>
-                                <excludes>
-                                    <exclude>META-INF/**</exclude>
-                                    <exclude>META-INF/services/**</exclude>
-                                    <exclude>META-INF/maven/**</exclude>
-                                    <exclude>META-INF/versions/9/**</exclude>
-                                </excludes>
+                                    <artifact>com.sun.xml.bind:*</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/**</exclude>
+                                        <exclude>META-INF/services/**</exclude>
+                                        <exclude>META-INF/maven/**</exclude>
+                                        <exclude>META-INF/versions/9/**</exclude>
+                                    </excludes>
                                 </filter>
                             </filters>
                         </configuration>
@@ -90,15 +96,17 @@
         </plugins>
     </build>
     <dependencies>
+        <!-- https://mvnrepository.com/artifact/jakarta.xml.bind/jakarta.xml.bind-api -->
         <dependency>
-            <groupId>javax.xml.bind</groupId>
-            <artifactId>jaxb-api</artifactId>
-            <version>2.3.1</version>
+            <groupId>jakarta.xml.bind</groupId>
+            <artifactId>jakarta.xml.bind-api</artifactId>
+            <version>4.0.1</version>
         </dependency>
+        <!-- https://mvnrepository.com/artifact/org.glassfish.jaxb/jaxb-runtime -->
         <dependency>
-            <groupId>com.sun.xml.bind</groupId>
-            <artifactId>jaxb-impl</artifactId>
-            <version>2.3.1</version>
+            <groupId>org.glassfish.jaxb</groupId>
+            <artifactId>jaxb-runtime</artifactId>
+            <version>4.0.4</version>
         </dependency>
     </dependencies>
 </project>
